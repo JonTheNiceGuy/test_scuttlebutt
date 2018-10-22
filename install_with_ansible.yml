@@ -1,0 +1,67 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Apt update, full upgrade, autoclean and autoremove
+    apt:
+      upgrade: full
+      update_cache: yes
+      autoclean: yes
+      autoremove: yes
+  
+  - name: Install NodeJS and NPM
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+    - nodejs
+    - npm
+    
+  - name: Install Scuttlebot
+    npm:
+      global: yes
+      name: scuttlebot
+      
+  - name: Create Scuttlebot SystemD Service File
+    copy:
+      dest: /etc/systemd/system/scuttlebot.service
+      content: |
+        [Unit]
+        Description=Scuttlebot
+        After=network.target
+        [Service]
+        Type=simple
+        User=vagrant
+        WorkingDirectory=/home/vagrant
+        ExecStart=/usr/local/bin/sbot server
+        Restart=always
+        KillMode=process
+        [Install]
+        WantedBy=multi-user.target
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Ensure sbot is started
+    systemd:
+      name: scuttlebot
+      state: started
+      enabled: yes
+      masked: no
+      
+  - name: Install sbot plugins
+    become_user: vagrant
+    shell: "sbot plugins.install {{ item }}"
+    loop:
+    - ssb-private
+    - ssb-links
+    
+  - name: Stop sbot
+    systemd:
+      name: scuttlebot
+      state: stopped
+      
+  - name: Start sbot
+    systemd:
+      name: scuttlebot
+      state: started
