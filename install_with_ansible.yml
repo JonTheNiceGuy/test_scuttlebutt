@@ -48,6 +48,11 @@
       state: started
       enabled: yes
       masked: no
+
+  - name: Wait for sbot to start
+    wait_for:
+      port: 8989
+      delay: 1
       
   - name: Install sbot plugins
     become_user: vagrant
@@ -60,8 +65,20 @@
     systemd:
       name: scuttlebot
       state: stopped
-      
+
+  - name: Wait for sbot to stop
+    wait_for:
+      port: 8989
+      delay: 1
+      state: drained
+
   - name: Start sbot
     systemd:
       name: scuttlebot
       state: started
+
+  - name: Wait for sbot to start
+    wait_for:
+      port: 8989
+      delay: 1
+
