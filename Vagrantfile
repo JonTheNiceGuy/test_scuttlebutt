@@ -4,6 +4,10 @@ Vagrant.configure("2") do |config|
   # config.vm.network "forwarded_port", guest: 80, host: 8080
   config.vm.network "public_network"
 
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 2048
+  end
+
   config.vm.provision :ansible_local do |ansible|
     ansible.playbook       = "install_with_ansible.yml"
     ansible.install_mode   = "pip"

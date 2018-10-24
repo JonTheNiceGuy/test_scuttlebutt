@@ -53,13 +53,60 @@
     wait_for:
       port: 8989
       delay: 1
+
+#  - name: Follow Cel (author of ssb-npm)
+#    become_user: vagrant
+#    shell: 'sbot publish --type contact --contact "@f/6sQ6d2CMxRUhLpspgGIulDxDCwYD7DzFzPNr7u5AU=.ed25519" --following'
       
-  - name: Install sbot plugins
-    become_user: vagrant
-    shell: "sbot plugins.install {{ item }}"
-    loop:
-    - ssb-private
-    - ssb-links
+#  - name: Install sbot plugins
+#    become_user: vagrant
+#    shell: "sbot plugins.install {{ item }}"
+#    loop:
+#    - "ssb-npm-registry --from 'http://localhost:8989/blobs/get/&2afFvk14JEObC047kYmBLioDgMfHe2Eg5/gndSjPQ1Q=.sha256'"
+
+  - name: Make ssb-npm-registry path
+    file:
+      path: /tmp/ssb-npm-registry-1.9.3
+      state: directory
+      owner: root
+      group: root
+      mode: 0644
+
+# This blob based on "Method 1" of "Installing #ssb-npm v1.6.2" %8PCs2u9BmWkPjvIx0D+f3K9bX0RRUXUJLHqcZYxflV0=.sha256
+# curl -s 'http://localhost:8989/blobs/get/&pxBCQDbRVU5RzU2gCIEgCeZDL5Jn4owy8QTNH81fDsE=.sha256' | tar xz 
+# ./package/bootstrap/bin.js --ws-url http://localhost:8989 --branch %8Kq3j4BkdwdiOni/7NSA3aMBK6b7ivrV/7OT4GIfyog=.sha256 install -g ssb-npm
+#
+# NOTE - IT DOES NOT WORK IN THIS INSTALL METHOD :(
+#
+#  - name: Get ssb-npm-registry
+#    unarchive: 
+#      src: "http://localhost:8989/blobs/get/&pxBCQDbRVU5RzU2gCIEgCeZDL5Jn4owy8QTNH81fDsE=.sha256"
+#      dest: /tmp/ssb-npm-registry-1.9.3
+#      remote_src: yes
+
+# This blob based on "Method 2" of "Installing #ssb-npm v1.6.2" %8PCs2u9BmWkPjvIx0D+f3K9bX0RRUXUJLHqcZYxflV0=.sha256
+#wget -q 'https://viewer.scuttlebot.io/&pxBCQDbRVU5RzU2gCIEgCeZDL5Jn4owy8QTNH81fDsE=.sha256' -O package.tgz &&
+#echo 'a710424036d1554e51cd4da008812009e6432f9267e28c32f104cd1fcd5f0ec1  package.tgz' | sha256sum -c &&
+#tar xzf package.tgz && ./package/bootstrap/bin.js --viewer-url https://viewer.scuttlebot.io \
+#  --branch %8Kq3j4BkdwdiOni/7NSA3aMBK6b7ivrV/7OT4GIfyog=.sha256 \
+#  install -g ssb-npm
+
+  - name: Get ssb-npm-registry
+    get_url:
+      url: https://viewer.scuttlebot.io/&pxBCQDbRVU5RzU2gCIEgCeZDL5Jn4owy8QTNH81fDsE=.sha256
+      dest: /tmp/ssb-npm-registry-1.9.3.tgz
+      checksum: sha256:a710424036d1554e51cd4da008812009e6432f9267e28c32f104cd1fcd5f0ec1
+
+  - name: Unpack ssb-npm-registry
+    unarchive:
+      src: /tmp/ssb-npm-registry-1.9.3.tgz
+      dest: /tmp/ssb-npm-registry-1.9.3
+      remote_src: yes
+
+  - name: Install ssb-npm-registry
+    shell: ./package/bootstrap/bin.js --viewer-url https://viewer.scuttlebot.io --branch %8Kq3j4BkdwdiOni/7NSA3aMBK6b7ivrV/7OT4GIfyog=.sha256 install -g ssb-npm
+    args:
+      chdir: /tmp/ssb-npm-registry-1.9.3
     
   - name: Stop sbot
     systemd:
@@ -77,8 +124,13 @@
       name: scuttlebot
       state: started
 
-  - name: Wait for sbot to start
+  - name: Wait for ssb-npm to start
     wait_for:
-      port: 8989
+      port: 8043
       delay: 1
 
+  - name: Install ssb-npm
+    npm:
+      global: yes
+      name: ssb-npm
+      registry: http://localhost:8043
