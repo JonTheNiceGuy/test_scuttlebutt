@@ -1,0 +1,3 @@
+.vagrant
+install_with_ansible.retry
+ubuntu-bionic-18.04-cloudimg-console.log
